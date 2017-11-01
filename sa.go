@@ -12,15 +12,14 @@ import (
 )
 
 var (
-	userCommand string                            // Mandatory
-	username    string                            // Mandatory
-	hosts       []string                          // Mandatory
-	iniFile     string         = "/.sa/hosts.ini" // Optional below
-	DEBUG       bool           = false
-	runInSeq    bool           = false
-	doPrefix    bool           = false
-	yesMode     bool           = false
-	wg          sync.WaitGroup // Needs to be global for some reason
+	userCommand string                      // Mandatory
+	username    string                      // Mandatory
+	hosts       []string                    // Mandatory
+	iniFile     string   = "/.sa/hosts.ini" // Optional below
+	DEBUG       bool     = false
+	runInSeq    bool     = false
+	doPrefix    bool     = false
+	yesMode     bool     = false
 )
 
 func getCommandLineArgs() []string {
@@ -154,7 +153,7 @@ func askUser(message string) bool {
 	}
 }
 
-func runCommand(u string, h string, c string) {
+func runCommand(u string, h string, c string, wg *sync.WaitGroup) {
 	if !runInSeq {
 		defer wg.Done()
 	}
@@ -164,11 +163,23 @@ func runCommand(u string, h string, c string) {
 		fmt.Println(err)
 	}
 	if doPrefix {
-		for _, s := range bytes.SplitAfter(o, []byte("\n")) {
-			if string(s) == "" {
+		p := "[" + h + "] "
+		as := bytes.SplitAfter(o, []byte("\n"))
+		n := len(as)
+		if DEBUG {
+			fmt.Printf("[debug] output-array contains %d elements\n", n)
+		}
+		for i := 0; i < n; i++ {
+			asl := len(as[i])
+			if asl == 0 {
 				continue
 			}
-			fmt.Printf("%s%s", "["+h+"] ", string(s))
+			// Some lines do not end with "\n"
+			if as[i][asl-1] != '\n' {
+				fmt.Printf("%s%s\n", p, string(as[i]))
+			} else {
+				fmt.Printf("%s%s", p, string(as[i]))
+			}
 		}
 	} else {
 		fmt.Printf("%s", o)
@@ -176,6 +187,8 @@ func runCommand(u string, h string, c string) {
 }
 
 func main() {
+	var wg sync.WaitGroup
+
 	args := getCommandLineArgs()
 	if DEBUG {
 		fmt.Printf("[debug] remaining args: %s\n", args)
@@ -192,10 +205,10 @@ func main() {
 
 	for _, host := range hosts {
 		if runInSeq {
-			runCommand(username, host, userCommand)
+			runCommand(username, host, userCommand, nil)
 		} else {
 			wg.Add(1)
-			go runCommand(username, host, userCommand)
+			go runCommand(username, host, userCommand, &wg)
 		}
 	}
 	if !runInSeq {
