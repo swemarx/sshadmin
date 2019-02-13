@@ -159,11 +159,11 @@ func runCommand(u string, h string, c string, wg *sync.WaitGroup) {
 	}
 	cmd := exec.Command("ssh", u+"@"+h, c)
 	o, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(err)
-	}
 	if doPrefix {
 		p := "[" + h + "] "
+		if err != nil {
+			fmt.Printf("%s%s\n", p, err)
+		}
 		as := bytes.SplitAfter(o, []byte("\n"))
 		n := len(as)
 		if DEBUG {
@@ -182,6 +182,9 @@ func runCommand(u string, h string, c string, wg *sync.WaitGroup) {
 			}
 		}
 	} else {
+		if err != nil {
+			fmt.Println(err)
+		}
 		fmt.Printf("%s", o)
 	}
 }
