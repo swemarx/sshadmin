@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/go-ini/ini"
-	"github.com/pborman/getopt/v2"
 	"os"
 	"os/exec"
 	"sync"
+
+	"github.com/go-ini/ini"
+	"github.com/pborman/getopt/v2"
 )
 
 var (
@@ -16,20 +17,20 @@ var (
 	username    string                      // Mandatory
 	hosts       []string                    // Mandatory
 	iniFile     string   = "/.sa/hosts.ini" // Optional below
-	DEBUG       bool     = false
+	debug       bool     = false
 	runInSeq    bool     = false
 	doPrefix    bool     = false
 	yesMode     bool     = false
 )
 
 func getCommandLineArgs() []string {
-	getopt.FlagLong(&iniFile,     "inifile",  'f', "Ini-file containing host/group definitions")
-	getopt.FlagLong(&userCommand, "command",  'c', "Command to run")
-	getopt.FlagLong(&username,    "username", 'u', "User to connect as")
-	getopt.FlagLong(&runInSeq,    "sequence", 's', "Run in sequence in stead of in parallel")
-	getopt.FlagLong(&doPrefix,    "prefix",   'p', "Prefix each line of output with hostname")
-	getopt.FlagLong(&DEBUG,       "debug",    'd', "Debugmode")
-	getopt.FlagLong(&yesMode,     "yes",      'y', "Assumes yes on questions")
+	getopt.FlagLong(&iniFile, "inifile", 'f', "Ini-file containing host/group definitions")
+	getopt.FlagLong(&userCommand, "command", 'c', "Command to run")
+	getopt.FlagLong(&username, "username", 'u', "User to connect as")
+	getopt.FlagLong(&runInSeq, "sequence", 's', "Run in sequence in stead of in parallel")
+	getopt.FlagLong(&doPrefix, "prefix", 'p', "Prefix each line of output with hostname")
+	getopt.FlagLong(&debug, "debug", 'd', "Debugmode")
+	getopt.FlagLong(&yesMode, "yes", 'y', "Assumes yes on questions")
 	getopt.Parse()
 
 	if !getopt.IsSet("command") || !getopt.IsSet("username") {
@@ -38,7 +39,7 @@ func getCommandLineArgs() []string {
 		os.Exit(1)
 	}
 
-	if DEBUG {
+	if debug {
 		fmt.Printf("[debug] using configuration %s\n", iniFile)
 	}
 
@@ -82,7 +83,7 @@ func resolveHosts(cfg *ini.File, args []string) []string {
 			isSection bool = false
 		)
 
-		if DEBUG {
+		if debug {
 			fmt.Printf("[debug] resolving \"%s\": ", arg)
 		}
 
@@ -122,11 +123,11 @@ func resolveHosts(cfg *ini.File, args []string) []string {
 			fmt.Printf("[error] \"%s\" is both section and host, exiting\n", arg)
 			os.Exit(1)
 		} else if isSection {
-			if DEBUG {
+			if debug {
 				fmt.Println("section")
 			}
 		} else if isHost {
-			if DEBUG {
+			if debug {
 				fmt.Println("host")
 			}
 		} else {
@@ -166,7 +167,7 @@ func runCommand(u string, h string, c string, wg *sync.WaitGroup) {
 		}
 		as := bytes.SplitAfter(o, []byte("\n"))
 		n := len(as)
-		if DEBUG {
+		if debug {
 			fmt.Printf("[debug] output-array contains %d elements\n", n)
 		}
 		for i := 0; i < n; i++ {
@@ -193,7 +194,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	args := getCommandLineArgs()
-	if DEBUG {
+	if debug {
 		fmt.Printf("[debug] remaining args: %s\n", args)
 	}
 	cfg := loadIni(iniFile)
